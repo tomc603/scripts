@@ -1,0 +1,195 @@
+Classes
+=============================
+Error
+-----------------------------
+This is a generic class that inherits the builtin Exception class.
+
+The Error class should be raised when an Exception is caught, but it is neither
+a socket connection exception, nor an exception with a data class.
+
+
+ConnectionError
+-----------------------------
+The ConnectionError class inherits the Graphite.Error class.
+
+This exception class is raised whenever a socket or urllib2 network error
+occurs, and contains a descriptive error message along with the original
+exception message.
+
+
+DataFormatError
+-----------------------------
+This class inherits the Graphite.Error class.
+
+The DataFormatError exception class is raised when a data formatting error
+occurs. These exceptions can ben generated from json.loads(), csv.reader(),
+missing dictionary keys, malformatted Graphite data target names, etc.
+Effectively any time a parameter is not in the expected format.
+
+
+DataPoint
+-----------------------------
+The DataPoint class represents a single item of data that is to be submitted to
+or in certain cases has been read from Graphite.
+
+This class contains three fields: name, time, value. These fields represent the
+Graphite server's datapoint name, the Graphite server's time associated with
+the datapoint, and the value of that datapoint.
+
+The name field is sanitized for use with Graphite when provided during
+instantiation of a new copy of the DataPoint class, and when the value is read
+from the DataPoint class.
+
+Acceptable characters for the name field:
+ * Alpha characters
+ * Digits
+ * Underscore (_)
+ * Period (.)
+
+
+DataRequest
+-----------------------------
+The DataRequest class represents a request for data that will be submitted to
+the Graphite server when requesting data from the Whisper database.
+
+This class contains the three fields: target, tfrom, tuntil. These values
+represent the Graphite datapoint name, the first point from which data should
+be retrieved, and the last point for which data should be retrieved.
+
+The name field is run through the sanitizing code when provided on
+instantiation, and any time the field is read from. Note that in the future,
+this field may be allowed to contain several other characters that are accepted
+by the Graphite URL API.
+
+The tfrom and tuntil fields may be an absolute time, or a relative time string.
+
+Absolute time strings may be in the "at(1)" format. See "man 1 at" or
+
+Relative time strings are generally absolute time strings prepended with a "-".  
+
+
+Server
+-----------------------------
+The Server() class represents a Graphite server.
+
+This class contains several fields: address, port, timeout, username, password.
+This class is used to connect to a Graphite server to submit or retrieve data,
+and requires at least the address field be populated.
+
+The username and password fields may not be retrieved, as they are hidden
+within the class instance. If a username is specified, but not a password, the
+script will interactively prompt for the password with getpass.getpass().
+
+The port field has a default value of 2003, and the timeout field has a default
+value of 30 seconds.
+
+
+Functions
+=============================
+DataPoint().get_dict()
+-----------------------------
+Retrieves the values within DataPoint as a dictionary. The datapoint name,
+returned as the value to the key 'target', is run through the graphite name
+sanitizing code.
+
+DataPoint().get_string()
+-----------------------------
+Retrieves the values within DataPoint formatted as a string prepared for
+submission to Graphite. The field order is: {target} {time} {value}
+
+
+DataRequest().get_dict()
+-----------------------------
+Returns the values within a DataRequest as a dictionary. This dictionary is
+typically consumed by urllib during the request URL creation process.
+
+The target field is passed through the graphite name sanitizing code when
+returned.
+
+
+Server().close()
+-----------------------------
+Closes the socket connection opened by this instance of the Server() class. If
+the socket is already closed a ConnectionError exception is raised.
+
+Server().connect()
+-----------------------------
+Connect to the server address specified in this instance of the Server() class.
+If no timeout is specified, the default of 30 seconds will be used.
+
+If the underlying socket raises an Exception, we catch it and raise it as a
+ConnectionError and pass a descriptive error string that contains an english
+description of what happened as well as the original socket error's error
+message.
+
+Server().get_csv()
+-----------------------------
+Retrieves data from the Whisper database through the web API on the specified
+Graphite server. This will usually require a username/password to be performed.
+
+The data retrieved from Graphite is parsed by csv.reader() and returned as a
+csv generator object.
+
+Server().get_dplist()
+-----------------------------
+Retrieves data from the Whisper database through the web API on the specified
+Graphite server. This will usually require a username/password to be performed.
+
+The data retrieved from Graphite is fetched in JSON format if the Python
+version is 2.6 or higher, otherwise it is retrieved as CSV. Once the data has
+been retrieved from the Graphite server, it is parsed into a list of
+DataPoint() objects.
+
+Server().get_raw()
+-----------------------------
+Retrieves data from the Whisper database through the web API on the specified
+Graphite server. This will usually require a username/password to be performed.
+
+The data retrieved from Graphite is not parsed or interpreted in any way, so it
+is not actually very helpful without custom code to interpret the results.
+Unfortunately, the raw graphite data isn't the easiest thing to parse.
+
+Server().get_json()
+-----------------------------
+Retrieves data from the Whisper database through the web API on the specified
+Graphite server. This will usually require a username/password to be performed.
+
+This function will raise an exception if executed by a Python release earlier
+than 2.6, warning the user that the Python verion is painfully old and that it
+should be upgraded.
+
+Graphite data retrieved in JSON format is considerably smaller than data in CSV
+format because repeating fields are not necessary. This is a pretty big
+benefit, so using get_json() should be prefered.
+
+Server.get_dplist() will use this function when Python is version 2.6 or more
+recent.
+
+The data retrieved from Graphite is parsed by json.loads() and returned as a
+json object.
+
+Server().submit()
+-----------------------------
+This function submits a single DataPoint() object or a list of DataPoint()
+objects to the Graphite server specified in this instance of the Server()
+object.
+
+This function will raise a ConnectionError() when an unhandled exception occurs
+in the functions called to actually perform a raw submission. If a
+ConnectionError or DataFormatError exception occurs in a function that is
+depended on by submit(), they will be re-raised by submit() in an unmodified
+state.
+
+Graphite.sanitize_name()
+-----------------------------
+This function replaces illegal datapoint names in the name string provided, and
+returns a string that may be used to submit or retrieve datapoints to and from
+Graphite.
+
+At this time, aggregation and wildcard characters will be replaced. This means
+DataRequest() target names may _not_ collect, aggregate, or manipulate several
+datapoints in a single request. This may be addressed in the future with an
+update.
+
+Any character that is replaced will be replaced with the underscore (_)
+character.

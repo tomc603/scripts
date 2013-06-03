@@ -1,0 +1,6 @@
+{
+  "venv": "", 
+  "name": "Sysinfo", 
+  "license": "GNU General Public License v2", 
+  "description": "Gather system information for proper daily status reporting"
+}
