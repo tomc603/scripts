@@ -12,6 +12,7 @@ import csv
 import bz2
 import datetime
 import glob
+import gzip
 from cStringIO import StringIO
 import logging
 import hashlib
@@ -138,6 +139,12 @@ def dequeue(q, o, searchzones, compress):
                 scriptlogger.debug('Reading compressed input file.')
                 csvfile = csv.reader(bz2.BZ2File(processitem, 'rb'),
                                      delimiter=' ', skipinitialspace=True)
+            elif processitem.endswith('.gz'):
+            # The file found ends in .gz. Use the python gzip handling
+                # module to decompress and read the file into the variable 'f'.
+                scriptlogger.debug('Reading compressed input file.')
+                csvfile = csv.reader(gzip.GzipFile(processitem, 'rb'),
+                                     delimiter=' ', skipinitialspace=True)
             else:
                 # The file is assumed to be uncompressed text. This may be wrong,
                 # but importing unneeded libraries like gzip is probably more
@@ -246,7 +253,7 @@ if __name__ == '__main__':
     # bz2 output file buffer size
     BUFFSIZ = 65536
     # bz2 output file compression level
-    COMPLVL = 9
+    COMPLVL = 1
     # Default logging level for script logging
     LOGLEVEL = logging.CRITICAL
     # Calculate yesterday's date for default date globs
