@@ -1,6 +1,9 @@
 # Backup files
 *~
 
+# IDEA project files
+.idea/*
+
 # Python files
 *.py[cod]
 

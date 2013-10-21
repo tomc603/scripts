@@ -49,6 +49,52 @@ def ListToSeries(timeval, datalist):
     yield [False]
 
 
+def decodeTimestamp():
+    """
+    Receive a <timestamp></timestamp> element and parse it.
+
+    Pull out the date, time, utc, and interval attributes
+    Pass each child to its responsible function.
+
+    @return:
+    @rtype:
+    """
+    pass
+
+def decodeCpuLoadAll():
+    """
+    Receive a <cpu-load-all></cpu-load-all> element and parse it.
+
+    This element only contains child elements named <cpu />. Each <cpu />
+    element contains the following attributes:
+      * number - Int CPU number, or "all" for total
+      * usr    - %CPU spent in application level
+      * nice   - %CPU spent in application level w/nice priority.
+      * sys    - %CPU spent in kernel level
+      * iowait - %CPU spent with a disk I/O waiting
+      * steal  - %CPU spent while hypervisor serviced other virt. CPU
+      * irq    - %CPU spent servicing interrupts
+      * soft   - %CPU spent servicing software interrupts
+      * guest  - %CPU spent servicing virtual CPU
+      * idle   - %CPU spent w/o task or disk I/O
+
+    @return:
+    @rtype:
+    """
+    pass
+
+def decodeContextSwitch():
+    """
+    Receive a <process-and-context-switch /> element and parse it.
+
+    Pull out per, proc, and cswch attributes.
+
+    @return:
+    @rtype:
+    """
+    pass
+
+
 #
 # Create an empty dict to store Series collection in
 #

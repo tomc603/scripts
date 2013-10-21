@@ -4,6 +4,7 @@ from optparse import OptionParser
 import dns.resolver
 import dns.query
 import dns.zone
+import optparse
 
 
 def querytest(server, domain):
