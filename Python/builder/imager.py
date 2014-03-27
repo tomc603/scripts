@@ -60,8 +60,10 @@ class Bootstrap:
 
 
 class Origin:
-    def __init__(self):
-        pass
+    _srcpath = ''
+
+    def __init__(self, path):
+        self._srcpath = path
 
 
 class Image:
