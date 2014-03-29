@@ -2,6 +2,7 @@
 
 RABBIT_PASS=$(openssl rand -base64 32)
 KEYSTONE_DBPASS=$(openssl rand -base64 32)
+ADMIN_TOKEN=$(openssl rand -base64 32)
 ADMIN_PASS=$(openssl rand -base64 32)
 GLANCE_DBPASS=$(openssl rand -base64 32)
 GLANCE_PASS=$(openssl rand -base64 32)
@@ -19,6 +20,7 @@ CEILOMETER_PASS=$(openssl rand -base64 32)
 
 echo "RABBIT_PASS=\"${RABBIT_PASS}\""
 echo "KEYSTONE_DBPASS=\"${KEYSTONE_DBPASS}\""
+echo "ADMIN_TOKEN=\"${ADMIN_TOKEN}\""
 echo "ADMIN_PASS=\"${ADMIN_PASS}\""
 echo "GLANCE_DBPASS=\"${GLANCE_DBPASS}\""
 echo "GLANCE_PASS=\"${GLANCE_PASS}\""
