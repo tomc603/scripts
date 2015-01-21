@@ -1,4 +1,4 @@
 scripts
 =======
 
-Random scripts collection
+Random helpful script collection
