@@ -2,7 +2,7 @@
 *~
 
 # IDEA project files
-.idea/*
+.idea/
 
 # Python files
 *.py[cod]
