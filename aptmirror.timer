@@ -1,0 +1,11 @@
+[Unit]
+Description=Synchronize APT mirror
+
+[Timer]
+OnCalendar=daily
+OnUnitActiveSec=6h
+Persistent=true
+RandomizedDelaySec=10m
+
+[Install]
+WantedBy=timers.target
