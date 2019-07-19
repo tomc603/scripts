@@ -33,7 +33,7 @@ trap 'rm -f ${lockfile} &> /dev/null; savelog -c 30 -n ${logfile} > /dev/null' E
 echo "$$" > ${lockfile} && echo "${scriptname}: Created lock file for PID $(cat ${lockfile})."
 
 echo "${scriptname}: Starting phase 1 sync at ${EPOCHSECONDS}"
-rsync -av --partial --delete --delete-after --timeout=60 \
+rsync -a --partial --delete --delete-after --timeout=60 \
     --exclude "indices/" \
     --exclude "dists/" \
     --exclude "project/trace/${HOSTNAME}" \
@@ -64,7 +64,7 @@ fi
 echo "${scriptname}: Completed phase 1 sync at ${EPOCHSECONDS}"
 
 echo "${scriptname}: Starting phase 2 sync at ${EPOCHSECONDS}"
-rsync -av --partial --delete --delete-after --timeout=60 \
+rsync -a --partial --delete --delete-after --timeout=60 \
     --exclude "pool/" \
     --exclude "project/trace/${HOSTNAME}" \
     --exclude binary-i386/ \
