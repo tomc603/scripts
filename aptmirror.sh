@@ -3,7 +3,7 @@
 set -e
 
 declare scriptname=$(basename $0)
-declare configfile="/etc/${scriptname%.sh}.config"
+declare configfile="/etc/${scriptname%.sh}.conf"
 declare lockfile="/var/run/${scriptname%.sh}.running"
 declare logfile="/var/log/${scriptname%.sh}.log"
 declare mirror="rsync://rsync.archive.ubuntu.com/ubuntu"
