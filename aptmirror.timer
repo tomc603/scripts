@@ -2,7 +2,8 @@
 Description=Synchronize APT mirror
 
 [Timer]
-OnCalendar=daily
+OnBootSec=1m
+# OnCalendar=daily
 OnUnitActiveSec=6h
 Persistent=true
 RandomizedDelaySec=10m

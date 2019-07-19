@@ -103,3 +103,4 @@ echo "${scriptname}: Stamping trace file."
 date -u > "${target_path}/project/trace/${HOSTNAME}"
 
 echo "${scriptname}: Sync complete."
+
