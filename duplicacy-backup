@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+declare lockfile="${HOME}/.duplicacy/.backup.lock"
+
+if [[ -e ${lockfile} ]]; then
+	echo "$(date -u '+%Y%m%d.%H%M') $(basename $0): Duplicacy backup already running. Exiting."
+	exit 0
+fi
+
+trap "rm -r ${lockfile}; exit" INT TERM EXIT
+echo $$ > ${lockfile}
+
+cd $HOME
+
+echo "$(basename $0): Duplicacy backup starting"
+/home/tom/bin/duplicacy -log backup -stats -threads 4
+echo "$(basename $0): Duplicacy backup ended"
+
+echo "$(basename $0): Duplicacy prune starting"
+# /home/tom/bin/duplicacy -log prune -keep 0:180 -keep 7:30 -keep 1:7
+/home/tom/bin/duplicacy -log prune -keep 0:1470 -keep 30:180 -keep 7:35 -keep 1:7
+echo "$(basename $0): Duplicacy prune ended"
+
+rm -f ${lockfile} &> /dev/null
+

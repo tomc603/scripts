@@ -1,0 +1,198 @@
+#!/usr/bin/bash
+
+# btrfs-scrub
+# Scrub all BTRFS volumes known to the kernel.
+# NOTE: This script will launch scrubs in parallel.
+
+set -e
+set -o pipefail
+shopt -s nullglob
+
+# Log message colors. Remember to use COLOR_NONE to reset output.
+declare -r COLOR_GREEN='\033[0;32m'
+declare -r COLOR_NONE='\033[0m'
+declare -r COLOR_RED='\033[0;31m'
+declare -r COLOR_WHITE='\033[0;33m'
+declare -r COLOR_YELLOW='\033[0;33m'
+
+declare COLOR_OUTPUT="false"
+declare DEBUG="false"
+declare SCRUB_ALL="false"
+declare SCRUB_SEQUENTIAL="false"
+declare -a SCRUB_VOLUMES=()
+
+if [[ -t 0 ]]; then
+    # STDIN is a TTY, show the user colors.
+    COLOR_OUTPUT="true"
+fi
+
+logprio () {
+    # Output messages to STDOUT/STDERR and Syslog
+    # Colorize messages based on priority if running on a TTY
+    local LOGCOLOR=${COLOR_NONE}
+    local PRIO="$1"
+    local -i PRIO_ID=0
+    shift
+
+    if [[ "${COLOR_OUTPUT}" == "true" ]]; then
+        case "${PRIO}" in
+            debug)
+                PRIO_ID=7
+                LOGCOLOR=${COLOR_GREEN}
+                ;;
+            error)
+                PRIO_ID=3
+                LOGCOLOR=${COLOR_RED}
+                ;;
+            info)
+                PRIO_ID=6
+                LOGCOLOR=${COLOR_NONE}
+                ;;
+            warning)
+                PRIO_ID=4
+                LOGCOLOR=${COLOR_YELLOW}
+                ;;
+        esac
+    fi
+
+    # If the message is an error or debugging, output to STDERR. Otherwise output to STDOUT.
+    if [[ "${prio}" == "error" || "${prio}" == "debug" ]]; then
+        echo -e "${LOGCOLOR}${PRIO^}: ${*}${COLOR_NONE}" >&2
+    else
+        echo -e "${LOGCOLOR}${PRIO^}: ${*}${COLOR_NONE}"
+    fi
+}
+
+logdebug () {
+    if [[ "${DEBUG}" == "true" ]]; then
+        logprio debug "${*}"
+    fi
+}
+
+loginfo () {
+    logprio info "${*}"
+}
+
+logwarn () {
+    logprio warning "${*}"
+}
+
+logerror () {
+    logprio error "${*}"
+}
+
+validvalue() {
+    local value="$1"
+
+    if [[ "${value}" =~ ^-.* ]]; then
+        logdebug "Value ${value} starts with -"
+        return 1
+    fi
+}
+
+usage() {
+    scriptname="$(basename $0)"
+
+    cat <<EOF
+
+${scriptname} -- Scrub all BTRFS volumes
+
+Usage: ${scriptname} [-a | --all] [-d | --debug] [-s | --sequential ] [volume ...]
+    -a | --all           Scrub all BTRFS volumes, ignoring any volumes specified.
+    -d | --debug         Output debugging messages.
+    -s | --sequential    Scrub volumes at the same time rather than sequentially.
+
+EOF
+}
+
+btrfs_scrub() {
+    logdebug "btrfs_scrub(${1})"
+    local scrub_flags=""
+    local target="${1}"
+
+    if [[ ${SCRUB_SEQUENTIAL} == "true" ]]; then
+        scrub_flags="-B"
+    fi
+
+    loginfo "Scrubbing ${target}"
+    /usr/bin/btrfs scrub start ${scrub_flags} ${target}
+}
+
+btrfs_scrub_all() {
+    logdebug "btrfs_scrub_all()"
+    local -a volumes
+    local label
+
+    for dev in $(findmnt --types btrfs --noheadings --nofsroot --list --output SOURCE | sort | uniq); do
+        echo "Device: ${dev}"
+        volumes+=($(findmnt --first-only --list --nofsroot --noheadings --output TARGET ${dev}))
+    done
+    loginfo "Candidate volumes: ${volumes[@]}"
+    for volume in ${volumes[@]}; do
+        btrfs_scrub "${volume}"
+    done
+}
+
+if [[ -z "${BASH_VERSINFO}" || -z "${BASH_VERSINFO[0]}" || ${BASH_VERSINFO[0]} -lt 4 ]]; then
+    echo -e "${COLOR_RED}Error: This script requires BASH >= 4.0.${COLOR_NONE}" >&2
+    echo -e "${COLOR_RED}Error: Bash 4.0 was released in 2009. Get with it. Seriously.${COLOR_NONE}" >&2
+    exit 1
+fi
+
+while [[ -n ${1} ]]; do
+    param="${1}"
+    case ${param} in
+        -a|--all)
+            shift
+            logdebug "SCRUB_ALL=true"
+            SCRUB_ALL="true"
+            ;;
+        -d|--debug)
+            shift
+            DEBUG="true"
+            logdebug "Debugging output enabled."
+            ;;
+        -h|--help)
+            shift
+            usage
+            exit 0
+            ;;
+        -s|--sequential)
+            shift
+            logdebug "SCRUB_SEQUENTIAL=true"
+            SCRUB_SEQUENTIAL="true"
+            ;;
+        -*)
+            shift
+            logerror "Unknown option ${param}"
+            usage
+            exit 1
+            ;;
+        *)
+            SCRUB_VOLUMES+=(${param})
+            logdebug "Added ${param} to volume list"
+            shift
+            ;;
+    esac
+done
+
+if [[ -n "${SCRUB_VOLUMES[@]}" && ${SCRUB_ALL} == "true" ]]; then
+    logwarn "Scrub all flag is present, ignoring specified volumes."
+    logdebug "Ignoring ${SCRUB_VOLUMES[@]}"
+fi
+
+if [[ -z "${SCRUB_VOLUMES[@]}" && ${SCRUB_ALL} != "true" ]]; then
+    logerror "No volumes specified for scrub and --all flag not set."
+    usage
+    exit 2
+fi
+
+if [[ ${SCRUB_ALL} == "true" ]]; then
+    logdebug "Scrubbing all BTRFS volumes"
+    btrfs_scrub_all
+else
+    logdebug "Scrubbing specified BTRFS volumes"
+    for btrfs_volume in ${SCRUB_VOLUMES[@]}; do
+        btrfs_scrub "${btrfs_volume}"
+    done
+fi

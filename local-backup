@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+DESTINATION="${DESTINATION:-/mnt/Backups/}"
+timestamp=$(date -u '+%Y%m%d.%H%M')
+
+source ${HOME}/.config/backups
+
+if ! [[ -d ${DESTINATION} ]]; then
+    echo "Destination path ${DESTINATION} does not exist."
+    exit 1
+fi
+
+for path in ${BACKUP_FOLDERS[@]}; do
+    source_path=$(dirname ${path})
+    source_item=$(basename ${path})
+    filename=${source_item}-${timestamp}.tar.lz4
+
+    echo "Backing up ${path} to ${DESTINATION}/${filename}"
+    tar --record-size=64k -p --acls --xattrs --force-local --one-file-system -c -C ${source_path} ${source_item} | lz4 -z -3 - ${DESTINATION}/${filename}
+done
+

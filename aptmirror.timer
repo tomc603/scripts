@@ -2,11 +2,12 @@
 Description=Synchronize APT mirror
 
 [Timer]
-OnBootSec=1m
-# OnCalendar=daily
+OnBootSec=2m
+# Calendar=daily
 OnUnitActiveSec=6h
 Persistent=true
 RandomizedDelaySec=10m
 
 [Install]
 WantedBy=timers.target
+

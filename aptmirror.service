@@ -1,8 +1,9 @@
 [Unit]
 Description=Synchronize APT mirror
 ConditionACPower=true
-After=network.target systemd-networkd.service
+After=network.target multi-user.target
 
 [Service]
 Type=oneshot
 ExecStart=/usr/local/bin/aptmirror.sh
+
