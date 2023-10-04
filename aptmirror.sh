@@ -7,6 +7,7 @@ declare configfile="/etc/${scriptname%.sh}.conf"
 declare lockfile="/var/run/${scriptname%.sh}.running"
 declare logfile="/var/log/${scriptname%.sh}.log"
 declare mirror="rsync://rsync.archive.ubuntu.com/ubuntu"
+#declare target_path="/mnt/external/mirror/ubuntu"
 declare target_path="/srv/mirror/apt/ubuntu"
 
 if [[ ! -f ${configfile} ]]; then

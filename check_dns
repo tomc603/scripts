@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+#
+# Check locally running DNS service
+
+# Copyright 2023 Tom Cameron
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+set -e
+set -o pipefail
+shopt -s nullglob
+
+declare DEBUG="false"
+declare SCRIPT_NAME
+declare TEST_V6="-4"
+declare VERBOSE="false"
+
+# declare lookup_fqdn="resolver.home.tomcameron.net"
+declare lookup_fqdn="hostname.bind"
+
+
+SCRIPT_NAME="$(basename "$0")"
+
+log_prio () {
+    local PRIO="$1"
+    shift
+
+    echo -e "${PRIO^}: ${*}" >&2
+}
+
+log_debug () {
+    if [[ "${DEBUG}" == "true" ]]; then
+        log_prio DEBUG "${*}"
+    fi
+}
+
+log_info () {
+    if [[ "${VERBOSE}" == "true" ]]; then
+        log_prio INFO "${*}"
+    fi
+}
+
+log_warn () {
+    log_prio WARNING "${*}"
+}
+
+log_error () {
+    log_prio ERROR "${*}"
+}
+
+usage() {
+    cat <<EOF
+
+${SCRIPT_NAME} -- Check locally running DNS service
+
+Usage: ${SCRIPT_NAME} [-6] [-d] [-v]
+    -6               Check local service via IPv6
+    -d               Output debugging messages.
+    -v               Output verbose messages.
+
+EOF
+}
+
+while getopts :6dv OPTION; do
+    case "${OPTION}" in
+      6)
+        log_debug "Enabling IPv6 checking"
+        TEST_V6="-6"
+        ;;
+      d)
+        log_debug "Debug messages enabled"
+        DEBUG="true"
+        VERBOSE="true"
+        ;;
+      h)
+        usage
+        exit 0
+        ;;
+      v)
+        log_debug "Verbose messages enabled"
+        VERBOSE="true"
+        ;;
+      *)
+        log_error "Invalid option -${OPTARG}"
+        usage
+        exit 1
+        ;;
+    esac
+done
+
+log_debug "Checking named.service status"
+if ! systemctl is-active named.service &> /dev/null; then
+    log_error "named.service is not running"
+    exit 2
+fi
+
+log_debug "Checking for ${lookup_fqdn}"
+# result="$(dig ${TEST_V6} @localhost +time=1 +tries=1 +short ${lookup_fqdn})"
+if ! result="$(dig ${TEST_V6} @localhost +time=1 +tries=1 +short CHAOS TXT ${lookup_fqdn})"; then
+    log_error "CHAOS lookup failed"
+    exit 2
+fi
+
+if ! [[ "${result}" =~ .*"$(hostname -s)".* ]]; then
+    log_error "Bind hostname does not match our hostname"
+    exit 2
+fi
+
+log_info "Results: ${result}"
